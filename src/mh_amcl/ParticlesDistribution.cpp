@@ -109,6 +109,8 @@ ParticlesDistribution::ParticlesDistribution(
   if (!parent_node->has_parameter("particles_step")) {
     parent_node->declare_parameter<int>("particles_step", 30);
   }
+
+  info_.id = 1987;
 }
 
 using CallbackReturnT =
@@ -147,6 +149,8 @@ ParticlesDistribution::on_configure(const rclcpp_lifecycle::State & state)
 
   init(init_pose);
   quality_ = 0.25;
+
+  info_.quality = quality_;
 
   return CallbackReturnT::SUCCESS;
 }
@@ -189,6 +193,12 @@ ParticlesDistribution::update_pose(tf2::WithCovarianceStamped<tf2::Transform> & 
 
   q.setRPY(mvrr, mvrp, mvry);
   pose.setRotation(q);
+
+
+  info_.pose.pose.position.x = pose.getOrigin()[0];
+  info_.pose.pose.position.y = pose.getOrigin()[1];
+  info_.pose.pose.position.z = pose.getOrigin()[2];
+  info_.num_part = particles_.size();
 }
 
 double
@@ -231,6 +241,9 @@ ParticlesDistribution::update_covariance(tf2::WithCovarianceStamped<tf2::Transfo
       pose.cov_mat_[i][j] = covariance(vs[i], vs[j], is_i_angle, is_j_angle);
     }
   }
+
+  info_.uncertainty = pose.cov_mat_[0][0] + pose.cov_mat_[1][0] +
+    pose.cov_mat_[5][5];  // x^2 + y^2 + t^2
 }
 
 double weighted_mean(const std::vector<double> & v, const std::vector<double> & w)
@@ -386,6 +399,7 @@ void
 ParticlesDistribution::predict(const tf2::Transform & movement, std::shared_ptr<grid_map::GridMap> gridmap)
 {
   auto & gridpmap_pos = gridmap->getPosition();
+  auto start = parent_node_->now();
 
   pose_.setData(static_cast<tf2::Transform>(pose_) * movement);
 
@@ -419,6 +433,8 @@ ParticlesDistribution::predict(const tf2::Transform & movement, std::shared_ptr<
       }
     }
   }  
+
+  info_.predict_time = parent_node_->now() - start;
 }
 
 tf2::Transform
@@ -499,6 +515,7 @@ ParticlesDistribution::publish_particles(int base_idx, const std_msgs::msg::Colo
 void
 ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters, rclcpp::Time & update_time)
 {
+  auto start = parent_node_->now();
   bool new_data = false;
   for (const auto correcter : correcters) {
     if (correcter->type_ == "laser") {
@@ -526,6 +543,8 @@ ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters
     }
   }
 
+  info_.correct_time = parent_node_->now() - start;
+
   normalize();
 
   // Calculate quality
@@ -535,6 +554,7 @@ ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters
       quality_ = std::max(quality_, p.hits / p.possible_hits);
     }
   }
+  info_.quality = quality_;
 
   if (quality_ > 0.0) {
     for (auto & p : particles_) {
@@ -547,6 +567,8 @@ ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters
 void
 ParticlesDistribution::reseed()
 {
+  auto start = parent_node_->now();
+
   // Sort particles by prob
   std::sort(
     particles_.begin(), particles_.end(),
@@ -626,6 +648,8 @@ ParticlesDistribution::reseed()
   }
 
   particles_ = new_particles;
+
+  info_.reseed_time = parent_node_->now() - start;
   normalize();
 
   update_pose(pose_);
