@@ -28,9 +28,9 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Get the launch directory
-    bringup_dir = get_package_share_directory('mh_amcl')
+    mh_bringup_dir = get_package_share_directory('mh_amcl')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    launch_dir = os.path.join(bringup_dir, 'launch')
+    mh_launch_dir = os.path.join(mh_bringup_dir, 'launch')
     nav2_launch_dir = os.path.join(nav2_bringup_dir, 'launch')
 
     # Create the launch configuration variables
@@ -67,7 +67,7 @@ def generate_launch_description():
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=os.path.join(
-            bringup_dir, 'maps', 'lab_3d.yaml'),
+            mh_bringup_dir, 'maps', 'lab_3d.yaml'),
         description='Full path to map file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -77,7 +77,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params_tiago_real_exp_mh3d.yaml'),
+        default_value=os.path.join(mh_bringup_dir, 'params', 'nav2_params_tiago_real_exp_mh3d.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -113,7 +113,8 @@ def generate_launch_description():
 
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'bringup_launch.py')),
+            os.path.join(mh_launch_dir, 'bringup_launch.py')), # Change to select amcl or mh_amcl
+            # os.path.join(nav2_launch_dir, 'bringup_launch.py')), # Change to select amcl or mh_amcl
         launch_arguments={'namespace': namespace,
                           'use_namespace': use_namespace,
                           'slam': slam,

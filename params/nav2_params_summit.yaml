@@ -80,16 +80,16 @@ mh_amcl:
     front_laser:
       type: laser
       topic: /front_laser/scan
-      distance_perception_error: 0.02
+      distance_perception_error: 0.15
       debug: true
     rear_laser:
       type: laser
       topic: /rear_laser/scan
-      distance_perception_error: 0.02
+      distance_perception_error: 0.15
     pc_0:
       type: pointcloud
       topic: /velodyne_points
-      distance_perception_error: 0.1
+      distance_perception_error: 0.15
       max_perception_distance: 10.0
       point_step: 50
 

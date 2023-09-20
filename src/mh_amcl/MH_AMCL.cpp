@@ -489,6 +489,9 @@ MH_AMCL_Node::publish_position_tf()
     info_.pose = info_selected.pose;
     info_.num_part = info_selected.num_part;
     info_.id = info_selected.id;
+    info_.predict_time = info_selected.predict_time;
+    info_.correct_time = info_selected.correct_time;
+    info_.reseed_time = info_selected.reseed_time;
 
     info_pub_->publish(info_);
 

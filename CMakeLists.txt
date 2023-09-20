@@ -22,6 +22,7 @@ find_package(octomap_ros)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(mh_amcl_msgs)
+find_package(builtin_interfaces REQUIRED)
 
 set(dependencies
   rclcpp
@@ -42,6 +43,7 @@ set(dependencies
   pcl_conversions
   pcl_ros
   mh_amcl_msgs
+  builtin_interfaces
 )
 
 include_directories(
