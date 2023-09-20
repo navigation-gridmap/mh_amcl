@@ -124,7 +124,8 @@ PointCloudCorrecter::correct(std::vector<Particle> & particles, rclcpp::Time & u
         p.possible_hits += 1.0;
         // p.hits += 1.0;
 
-        if (prob >  map_->getProbHit()) {
+        // if (prob >  map_->getProbHit()) {
+        if (prob >  map_->getProbMiss()) {
           p.hits += 1.0;
         }
       }

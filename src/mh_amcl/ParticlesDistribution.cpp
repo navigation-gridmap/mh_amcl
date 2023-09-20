@@ -32,6 +32,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "builtin_interfaces/msg/duration.hpp"
 
 namespace mh_amcl
 {
@@ -233,17 +234,20 @@ ParticlesDistribution::update_covariance(tf2::WithCovarianceStamped<tf2::Transfo
   }
 
   std::vector<std::vector<double>> vs = {vpx, vpy, vpz, vrr, vrp, vry};
-
+  double trace = 0.0;
   for (int i = 0; i < 6; i++) {
     for (int j = 0; j < 6; j++) {
       bool is_i_angle = i >= 3;
       bool is_j_angle = j >= 3;
       pose.cov_mat_[i][j] = covariance(vs[i], vs[j], is_i_angle, is_j_angle);
+      // Trace
+      if (i==j) {
+         trace += pose.cov_mat_[i][j];
+      }
     }
   }
 
-  info_.uncertainty = pose.cov_mat_[0][0] + pose.cov_mat_[1][0] +
-    pose.cov_mat_[5][5];  // x^2 + y^2 + t^2
+  info_.uncertainty = trace;
 }
 
 double weighted_mean(const std::vector<double> & v, const std::vector<double> & w)
@@ -399,8 +403,10 @@ void
 ParticlesDistribution::predict(const tf2::Transform & movement, std::shared_ptr<grid_map::GridMap> gridmap)
 {
   auto & gridpmap_pos = gridmap->getPosition();
-  auto start = parent_node_->now();
 
+  auto start = std::chrono::high_resolution_clock::now();
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
+  
   pose_.setData(static_cast<tf2::Transform>(pose_) * movement);
 
   if (gridmap != nullptr) {
@@ -432,9 +438,24 @@ ParticlesDistribution::predict(const tf2::Transform & movement, std::shared_ptr<
         std::cerr << "Error accessing gridmap pos at " << pos.x() << ", " << pos.y() << ")" << std::endl;
       }
     }
-  }  
+  }
 
-  info_.predict_time = parent_node_->now() - start;
+  // Obtener el tiempo de finalización
+  auto stop = std::chrono::high_resolution_clock::now();
+  // Calcular la duración en milisegundos
+  auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+  // Convertir la duración en segundos
+  double duration_s = duration_ms.count() / 1000.0; // Convertir milisegundos a segundos
+  builtin_interfaces::msg::Duration duration_ros2;
+  duration_ros2.sec = static_cast<int32_t>(duration_s);
+  duration_ros2.nanosec = static_cast<uint32_t>((duration_s - duration_ros2.sec) * 1e9);
+  info_.predict_time = duration_ros2;
+
+  // Imprimir el tiempo de ejecución
+  // std::cout << "La función tardó " << duracion.count() << " milisegundos en ejecutarse." << std::endl;
+  // std::cout << "predict " << info_.predict_time.sec << " " << info_.predict_time.nanosec << std::endl;
+  // std::cout << "T2 " << duration_ms.count() << " " << duration_s << std::endl;
+
 }
 
 tf2::Transform
@@ -515,7 +536,8 @@ ParticlesDistribution::publish_particles(int base_idx, const std_msgs::msg::Colo
 void
 ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters, rclcpp::Time & update_time)
 {
-  auto start = parent_node_->now();
+  // auto start = parent_node_->now();
+  auto start = std::chrono::high_resolution_clock::now();
   bool new_data = false;
   for (const auto correcter : correcters) {
     if (correcter->type_ == "laser") {
@@ -543,7 +565,18 @@ ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters
     }
   }
 
-  info_.correct_time = parent_node_->now() - start;
+  // Obtener el tiempo de finalización
+  auto stop = std::chrono::high_resolution_clock::now();
+  // Calcular la duración en milisegundos
+  auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+  // Convertir la duración en segundos
+  double duration_s = duration_ms.count() / 1000.0; // Convertir milisegundos a segundos
+  builtin_interfaces::msg::Duration duration_ros2;
+  duration_ros2.sec = static_cast<int32_t>(duration_s);
+  duration_ros2.nanosec = static_cast<uint32_t>((duration_s - duration_ros2.sec) * 1e9);
+  info_.correct_time = duration_ros2;
+  // info_.correct_time = parent_node_->now() - start;
+  // std::cout << "correct " << info_.correct_time.sec << " " << info_.correct_time.nanosec << std::endl;
 
   normalize();
 
@@ -551,23 +584,27 @@ ParticlesDistribution::correct_once(const std::list<CorrecterBase*> & correcters
   quality_ = 0.0;
   for (auto & p : particles_) {
     if (p.possible_hits > 0.0) {
-      quality_ = std::max(quality_, p.hits / p.possible_hits);
+      float q = p.hits / p.possible_hits;
+      // std::cout << "q: " << q << " - p.hits: " << p.hits << " - p.possible_hits: " << p.possible_hits <<  std::endl;
+      if (!std::isinf(q))
+        quality_ = std::clamp(q, (float)0.0, (float)1.0);;
     }
   }
   info_.quality = quality_;
 
-  if (quality_ > 0.0) {
+  // if (quality_ > 0.0) {
     for (auto & p : particles_) {
       p.hits = 0.0;
       p.possible_hits = 0.0;
     }
-  }
+  // }
 }
 
 void
 ParticlesDistribution::reseed()
 {
-  auto start = parent_node_->now();
+  // auto start = parent_node_->now();
+  auto start = std::chrono::high_resolution_clock::now();
 
   // Sort particles by prob
   std::sort(
@@ -649,7 +686,19 @@ ParticlesDistribution::reseed()
 
   particles_ = new_particles;
 
-  info_.reseed_time = parent_node_->now() - start;
+  // Obtener el tiempo de finalización
+  auto stop = std::chrono::high_resolution_clock::now();
+  // Calcular la duración en milisegundos
+  auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+  // Convertir la duración en segundos
+  double duration_s = duration_ms.count() / 1000.0; // Convertir milisegundos a segundos
+  builtin_interfaces::msg::Duration duration_ros2;
+  duration_ros2.sec = static_cast<int32_t>(duration_s);
+  duration_ros2.nanosec = static_cast<uint32_t>((duration_s - duration_ros2.sec) * 1e9);
+  info_.reseed_time = duration_ros2;
+  // info_.reseed_time = parent_node_->now() - start;
+  // std::cout << "reseed " << info_.reseed_time.sec << " " << info_.reseed_time.nanosec << std::endl;
+
   normalize();
 
   update_pose(pose_);

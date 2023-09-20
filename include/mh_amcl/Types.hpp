@@ -24,9 +24,9 @@ namespace mh_amcl
 typedef struct
 {
   tf2::Transform pose;
-  double prob;
-  float hits;
-  float possible_hits;
+  double prob {0.0};
+  float hits {0.0};
+  float possible_hits {0.0};
 } Particle;
 
 typedef enum TColor
