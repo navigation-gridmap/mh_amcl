@@ -149,16 +149,18 @@ The bottleneck is in the octomap function RayTrace. Build octomap with (OpenMPI)
 
 ## Citing
 
-**Cooming soon**. Meanwhile, you can cite the 2D version:
 ```
-@INPROCEEDINGS{10160957,
-  author={García, Alberto and Martín, Francisco and Guerrero, José Miguel and Rodríguez, Francisco J. and Matellán, Vicente},
-  booktitle={2023 IEEE International Conference on Robotics and Automation (ICRA)}, 
-  title={Portable Multi-Hypothesis Monte Carlo Localization for Mobile Robots}, 
-  year={2023},
-  volume={},
-  number={},
-  pages={1933-1939},
-  doi={10.1109/ICRA48891.2023.10160957}}
+@article{https://doi.org/10.1002/rob.22353,
+author = {Rico, Francisco Martín and Hernández, José Miguel Guerrero and Pérez-Rodríguez, Rodrigo and Peña-Narvaez, Juan Diego and Gómez-Jacinto, Alberto García},
+title = {Open source robot localization for nonplanar environments},
+journal = {Journal of Field Robotics},
+volume = {n/a},
+number = {n/a},
+pages = {},
+keywords = {field robotics, localization, mobile robotics, navigation, ROS},
+doi = {https://doi.org/10.1002/rob.22353},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.22353},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/rob.22353},
+}
 
 ```
